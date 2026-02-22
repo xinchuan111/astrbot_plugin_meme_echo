@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple
 
 from astrbot.api import logger
 from astrbot.api.event import filter, AstrMessageEvent
@@ -18,11 +18,17 @@ def md5_bytes_upper(b: bytes) -> str:
 
 @register("meme_echo", "YourName", "群聊表情包命中即复读（命令收录+别名管理）", "1.1.0")
 class MemeEcho(Star):
-   def __init__(self, context: Context, *args, **kwargs):
-        super().__init__(context)
-        # 如果未来框架传了 config，会在 kwargs 或 args 里，这里兜底取一下
-        self.config = kwargs.get("config", None)
+    """
+    /meme add               收录一张表情包（先发命令再发图，或命令同条带图）
+    /meme name <KEY> <别名> 绑定别名
+    /meme show <KEY|别名>   查看详情
+    /meme list              列表（含别名）
+    /meme del <KEY|别名>    删除
+    /meme reload            重建索引
+    """
 
+    async def initialize(self):
+        # ✅ 所有初始化都放这里，不要写 __init__
         self.data_dir = Path(StarTools.get_data_dir(self.plugin_name))
         self.meme_dir = self.data_dir / "memes"
         self.meme_dir.mkdir(parents=True, exist_ok=True)
@@ -32,12 +38,10 @@ class MemeEcho(Star):
 
         self.index: Dict[str, str] = {}
         self.alias: Dict[str, str] = {}
-
-        # (group_id, user_id) -> expire_ts
-        self.awaiting: Dict[Tuple[str, str], float] = {}
+        self.awaiting: Dict[Tuple[str, str], float] = {}  # (group_id, user_id) -> expire_ts
 
         self._load_or_rebuild()
-        logger.error(f"✅ meme_echo loaded. count={len(self.index)} alias={len(self.alias)} dir={self.meme_dir}")
+        logger.error(f"✅ meme_echo initialized. count={len(self.index)} alias={len(self.alias)} dir={self.meme_dir}")
 
     # ---------- state ----------
     def _load_or_rebuild(self) -> None:
