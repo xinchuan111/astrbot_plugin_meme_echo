@@ -2,6 +2,14 @@ from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 
+@filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
+async def on_group_message(self, event: AstrMessageEvent):
+    msg = event.message_obj
+    logger.info("====== DEBUG: raw message chain ======")
+    logger.info(repr(msg.message))          # 1) 打印消息链（最关键）
+    logger.info(str(msg.message))           # 2) 有时更好读（可选）
+    logger.info("====== DEBUG END ======")
+
 @register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
 class MyPlugin(Star):
     def __init__(self, context: Context):
